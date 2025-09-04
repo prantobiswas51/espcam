@@ -11,33 +11,35 @@ class FrameController extends Controller
 {
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'camera_id'   => 'required|string|max:64',
-            'captured_at' => 'nullable|date',
-            'frame'       => 'required|image|mimes:jpg,jpeg,png|max:4096', // ~4MB
+        // If you require a Bearer token, check it here (or via middleware)
+        $auth = $request->bearerToken();
+        if ($auth !== 'HUUEEF76346G') {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $validated = $request->validate([
+            'camera_id'    => ['required', 'string'],
+            'captured_at'  => ['required', 'date'],
+            'frame'        => ['required', 'file', 'mimes:jpg,jpeg', 'max:10240'], // 10 MB
         ]);
 
-        $cameraId = $data['camera_id'];
-        $ts = isset($data['captured_at'])
-            ? Carbon::parse($data['captured_at'])->format('Ymd_His_u')
-            : now()->format('Ymd_His_u');
+        $file = $request->file('frame');
+        if (!$file->isValid()) {
+            return response()->json(['error' => 'Invalid file'], 422);
+        }
 
-        // Store as: storage/app/public/frames/{camera_id}/{timestamp}.jpg
-        $ext = $request->file('frame')->extension() ?: 'jpg';
-        $path = $request->file('frame')->storeAs(
-            "public/frames/{$cameraId}",
-            "{$ts}.{$ext}"
-        );
+        $cameraId   = $validated['camera_id'];
+        $capturedAt = Carbon::parse($validated['captured_at'])->toImmutable();
 
-        // Save "latest" pointer in Redis (fast) so Blade can fetch quickly
-        $publicUrl = Storage::url($path); // /storage/frames/{camera}/...
-        $payload = json_encode([
-            'url' => $publicUrl,
-            'at'  => $ts,
-            'ext' => $ext,
-        ]);
-        Redis::set("camera:{$cameraId}:latest", $payload);
+        $filename = $capturedAt->format('Ymd_His_u') . '.jpg';
+        $path = $file->storeAs("frames/{$cameraId}", $filename, ['disk' => 'public']); // or default disk
 
-        return response()->json(['ok' => true], 201);
+        return response()->json([
+            'ok'          => true,
+            'camera_id'   => $cameraId,
+            'captured_at' => $capturedAt->toIso8601String(),
+            'path'        => $path,
+            'size'        => $file->getSize(),
+        ], 201);
     }
 }
