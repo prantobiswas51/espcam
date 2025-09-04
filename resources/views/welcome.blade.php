@@ -45,7 +45,7 @@
     </header>
     <div
         class="flex items-center justify-center w-full transition-opacity opacity-100 duration-750 lg:grow starting:opacity-0">
-        <img id="camera" src="/latest-frame/CAM_01" style="max-width:100%;">
+        <img id="camera" src="/latest-frame/15648" style="max-width:100%;">
     </div>
 
     @if (Route::has('login'))
@@ -54,7 +54,7 @@
     <script>
         setInterval(() => {
     const img = document.getElementById("camera");
-    img.src = "/latest-frame/CAM_01?ts=" + new Date().getTime(); 
+    img.src = "/latest-frame/15648?ts=" + new Date().getTime(); 
     // `?ts` busts browser cache
 }, 1000); // refresh every 1s
     </script>
