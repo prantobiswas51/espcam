@@ -8,9 +8,11 @@ Route::get('/', function () {
 });
 
 Route::get('/latest-frame/{cameraId}', function (string $cameraId) {
-    $json = Redis::get("camera:{$cameraId}:latest");
-    if (!$json) {
-        return response()->json(['url' => null], 404);
+    $binary = Redis::get("camera:{$cameraId}:latest:binary");
+
+    if (!$binary) {
+        return response('Not found', 404);
     }
-    return response($json, 200)->header('Content-Type', 'application/json');
+
+    return response($binary, 200)->header('Content-Type', 'image/jpeg');
 });
