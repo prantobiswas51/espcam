@@ -11,7 +11,6 @@ class FrameController extends Controller
 {
     public function store(Request $request)
     {
-        // If you require a Bearer token, check it here (or via middleware)
         $auth = $request->bearerToken();
         if ($auth !== 'HUUEEF76346G') {
             return response()->json(['error' => 'Unauthorized'], 401);
@@ -29,16 +28,28 @@ class FrameController extends Controller
         }
 
         $cameraId   = $validated['camera_id'];
-        $capturedAt = Carbon::parse($validated['captured_at'])->toImmutable();
+        $capturedAt = \Carbon\Carbon::parse($validated['captured_at'])->toImmutable();
 
         $filename = $capturedAt->format('Ymd_His_u') . '.jpg';
-        $path = $file->storeAs("frames/{$cameraId}", $filename, ['disk' => 'public']); // or default disk
+        $path = $file->storeAs("frames/{$cameraId}", $filename, ['disk' => 'public']);
+
+        // Build the public URL (assuming you ran `php artisan storage:link`)
+        $url = asset("storage/{$path}");
+
+        // Save latest frame info into Redis
+        $payload = [
+            'camera_id'   => $cameraId,
+            'captured_at' => $capturedAt->toIso8601String(),
+            'url'         => $url,
+        ];
+        Redis::set("camera:{$cameraId}:latest", json_encode($payload));
 
         return response()->json([
             'ok'          => true,
             'camera_id'   => $cameraId,
             'captured_at' => $capturedAt->toIso8601String(),
             'path'        => $path,
+            'url'         => $url,
             'size'        => $file->getSize(),
         ], 201);
     }
