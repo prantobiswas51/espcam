@@ -1,6 +1,14 @@
-{{-- resources/views/cameras.blade.php --}}
+<!DOCTYPE html>
+<html lang="en">
 
-<x-app-layout>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6" x-data="cameras()">
         <template x-for="cam in cams" :key="cam.id">
             <div class="p-4 border rounded">
@@ -46,4 +54,6 @@
         }))
         })
     </script>
-</x-app-layout>
+</body>
+
+</html>
